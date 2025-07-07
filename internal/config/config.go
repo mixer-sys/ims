@@ -29,5 +29,4 @@ func LoadConfig() (*Config, error) {
 		return nil, fmt.Errorf("error parsing environment variables: %w", err)
 	}
 	return &cfg, nil
-
 }

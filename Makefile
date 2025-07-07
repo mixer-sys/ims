@@ -1,4 +1,4 @@
-lint:
-    golangci-lint run
-
 .PHONY: lint
+
+lint:
+	golangci-lint run

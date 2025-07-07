@@ -12,7 +12,6 @@ import (
 )
 
 func NewRouter(dataBase *sql.DB) *mux.Router {
-
 	productRepo := db.NewProductRepository(dataBase)
 	categoryRepo := db.NewCategoryRepository(dataBase)
 
