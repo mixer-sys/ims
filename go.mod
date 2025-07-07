@@ -1,3 +1,16 @@
-module github.com/mixer-sys/ims
+module ims
 
-go 1.24.4
+go 1.23.10
+
+require (
+	github.com/caarlos0/env/v11 v11.3.1 // indirect
+	github.com/gorilla/mux v1.8.1 // indirect
+	github.com/joho/godotenv v1.5.1 // indirect
+	github.com/lib/pq v1.10.9 // indirect
+	github.com/mfridman/interpolate v0.0.2 // indirect
+	github.com/pressly/goose/v3 v3.24.3 // indirect
+	github.com/sethvargo/go-retry v0.3.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
+	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
+	golang.org/x/sync v0.15.0 // indirect
+)
