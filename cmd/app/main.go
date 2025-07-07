@@ -30,7 +30,7 @@ func main() {
 
 	r := routers.NewRouter(dataBase)
 	address := ":" + config.ServerPort
-	logger.Info("Starting server on %s", address)
+	logger.Info("Starting server on :", address)
 	if err := http.ListenAndServe(address, r); err != nil {
 		logger.Error("ListenAndServe error", err)
 	}

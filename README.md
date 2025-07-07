@@ -3,6 +3,7 @@ Inventory Management Service - Сервис учета товаров
 
 # RUN
 ```bash
+cp env.example .env
 docker-compose up
 ```
 
