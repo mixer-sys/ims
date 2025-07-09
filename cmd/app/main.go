@@ -8,6 +8,7 @@ import (
 	"ims/internal/routers"
 	"net/http"
 	"os"
+	"os/signal"
 
 	_ "github.com/lib/pq"
 )
@@ -31,7 +32,17 @@ func main() {
 	r := routers.NewRouter(dataBase)
 	address := ":" + config.ServerPort
 	logger.Info("Starting server on :", address)
+
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, os.Interrupt)
 	if err := http.ListenAndServe(address, r); err != nil {
 		logger.Error("ListenAndServe error", err)
 	}
+	<-ch
+	logger.Info("Shutting down server")
+	if err := dataBase.Close(); err != nil {
+		logger.Error("Failed to close database connection", err)
+	}
+	logger.Info("Server gracefully stopped")
+
 }
