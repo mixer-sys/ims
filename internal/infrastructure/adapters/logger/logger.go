@@ -1,7 +1,7 @@
 package logger
 
 import (
-	"ims/internal/config"
+	"ims/config"
 	"os"
 
 	"golang.org/x/exp/slog"

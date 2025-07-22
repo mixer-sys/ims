@@ -2,21 +2,20 @@ package routers
 
 import (
 	"database/sql"
+	"ims/internal/domain/ports/repository"
+	"ims/internal/domain/ports/service"
+	"ims/internal/interfaces/http/handlers"
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
-
-	"ims/internal/db"
-	"ims/internal/handlers"
-	services "ims/internal/services"
 )
 
 func NewRouter(dataBase *sql.DB) *mux.Router {
-	productRepo := db.NewProductRepository(dataBase)
-	categoryRepo := db.NewCategoryRepository(dataBase)
+	productRepo := repository.NewProductRepository(dataBase)
+	categoryRepo := repository.NewCategoryRepository(dataBase)
 
-	productService := services.NewProductService(productRepo)
-	categoryService := services.NewCategoryService(categoryRepo)
+	productService := service.NewProductService(productRepo)
+	categoryService := service.NewCategoryService(categoryRepo)
 
 	productHandler := handlers.NewProductHandler(productService)
 	categoryHandler := handlers.NewCategoryHandler(categoryService)
