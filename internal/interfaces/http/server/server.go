@@ -7,6 +7,7 @@ import (
 	"ims/config"
 	"log/slog"
 	"net/http"
+	"time"
 
 	router "ims/internal/infrastructure/adapters/router"
 )
@@ -31,8 +32,9 @@ func Run(ctx context.Context, cfg *config.Config) error {
 
 	address := ":" + cfg.ServerPort
 	srv := &http.Server{
-		Addr:    address,
-		Handler: r,
+		Addr:              address,
+		Handler:           r,
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	go func() {
