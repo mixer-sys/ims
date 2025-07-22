@@ -66,23 +66,3 @@ func (r *categoryRepository) GetAll() ([]models.Category, error) {
 	}
 	return categories, nil
 }
-
-func (s *categoryService) Create(category *models.Category) error {
-	return s.repo.Create(category)
-}
-
-func (s *categoryService) GetByID(id int) (*models.Category, error) {
-	return s.repo.GetByID(id)
-}
-
-func (s *categoryService) Update(category *models.Category) error {
-	return s.repo.Update(category)
-}
-
-func (s *categoryService) Delete(id int) error {
-	return s.repo.Delete(id)
-}
-
-func (s *categoryService) GetAll() ([]models.Category, error) {
-	return s.repo.GetAll()
-}

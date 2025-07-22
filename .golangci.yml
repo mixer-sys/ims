@@ -1,5 +1,14 @@
-version: 2
 linters:
-  default: all
   enable:
+    - golint
+    - errcheck
+    - staticcheck
     - unused
+    - gocyclo
+    - gofmt
+    - gosec
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      text: "error return value not checked"
