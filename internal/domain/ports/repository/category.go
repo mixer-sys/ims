@@ -25,12 +25,15 @@ func NewCategoryRepository(db *pgxpool.Pool) CategoryRepository {
 
 func (r *categoryRepository) Create(ctx context.Context, category *models.Category) error {
 	query := "INSERT INTO categories (name) VALUES ($1) RETURNING id"
+
 	return r.db.QueryRow(ctx, query, category.Name).Scan(&category.ID)
 }
 
 func (r *categoryRepository) GetByID(ctx context.Context, id int) (*models.Category, error) {
 	var category models.Category
+
 	query := "SELECT id, name FROM categories WHERE id = $1"
+
 	err := r.db.QueryRow(ctx, query, id).Scan(&category.ID, &category.Name)
 	if err != nil {
 		return nil, err
@@ -54,6 +57,7 @@ func (r *categoryRepository) GetAll(ctx context.Context) ([]models.Category, err
 	var categories []models.Category
 	query := "SELECT id, name FROM categories"
 	rows, err := r.db.Query(ctx, query)
+
 	if err != nil {
 		return nil, err
 	}

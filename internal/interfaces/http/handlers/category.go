@@ -28,7 +28,8 @@ func (h *CategoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	category.ID = uuid.New().String()
-	_, err := h.db.Exec(r.Context(), "INSERT INTO categories (id, name) VALUES ($1, $2)", category.ID, category.Name)
+	_, err := h.db.Exec(
+		r.Context(), "INSERT INTO categories (id, name) VALUES ($1, $2)", category.ID, category.Name)
 	if err != nil {
 		http.Error(w, "Error inserting category", http.StatusInternalServerError)
 		return
@@ -47,7 +48,9 @@ func (h *CategoryHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	id := vars["id"]
 	category := &models.Category{}
-	err := h.db.QueryRow(r.Context(), "SELECT id, name FROM categories WHERE id = $1", id).Scan(&category.ID, &category.Name)
+	err := h.db.QueryRow(
+		r.Context(), "SELECT id, name FROM categories WHERE id = $1", id,
+	).Scan(&category.ID, &category.Name)
 	if err != nil {
 		http.Error(w, "Category not found", http.StatusNotFound)
 		return
@@ -103,6 +106,7 @@ func (h *CategoryHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 			limit = l
 		}
 	}
+
 	if offsetStr != "" {
 		if o, err := strconv.Atoi(offsetStr); err == nil {
 			offset = o
@@ -125,6 +129,7 @@ func (h *CategoryHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 		}
 		categories = append(categories, category)
 	}
+
 	err = json.NewEncoder(w).Encode(categories)
 	if err != nil {
 		http.Error(w, "Error encoding response", http.StatusInternalServerError)

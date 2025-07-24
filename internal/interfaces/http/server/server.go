@@ -15,7 +15,11 @@ import (
 
 func Run(ctx context.Context, cfg *config.Config) error {
 
-	dataBase, err := pgxpool.Connect(ctx, fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", cfg.DbHost, cfg.DbPort, cfg.DbUser, cfg.DbPassword, cfg.DbName, cfg.SSLMode))
+	dataBase, err := pgxpool.Connect(
+		ctx, fmt.Sprintf(
+			"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+			cfg.DbHost, cfg.DbPort, cfg.DbUser,
+			cfg.DbPassword, cfg.DbName, cfg.SSLMode))
 	if err != nil {
 		return fmt.Errorf("failed to connect to the database: %w", err)
 	}
@@ -28,6 +32,7 @@ func Run(ctx context.Context, cfg *config.Config) error {
 	r := router.NewRouter(dataBase)
 
 	address := ":" + cfg.ServerPort
+
 	srv := &http.Server{
 		Addr:              address,
 		Handler:           r,

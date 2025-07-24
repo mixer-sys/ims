@@ -27,6 +27,7 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
 	go func() {
 		for {
 			select {
@@ -44,9 +45,10 @@ func main() {
 	}()
 
 	<-ch
+
 	logger.Info("Shutting down server")
+
 	cancel()
 
 	logger.Info("Server shutdown complete")
-
 }

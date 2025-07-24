@@ -19,6 +19,7 @@ func New(cfg *config.Config) *slog.Logger {
 		Level:     LogLevel[cfg.LogLevel],
 		AddSource: true,
 	}
+
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, opts))
 	return logger
 }

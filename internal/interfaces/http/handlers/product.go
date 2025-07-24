@@ -60,7 +60,10 @@ func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	product.ID = id
-	if _, err := h.db.Exec(r.Context(), "UPDATE products SET name = $1, price = $2 WHERE id = $3", product.Name, product.Price, product.ID); err != nil {
+	if _, err := h.db.Exec(
+		r.Context(), "UPDATE products SET name = $1, price = $2 WHERE id = $3",
+		product.Name, product.Price, product.ID); err != nil {
+
 		http.Error(w, "Error updating product", http.StatusInternalServerError)
 		return
 	}
@@ -70,7 +73,9 @@ func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
-	if _, err := h.db.Exec(r.Context(), "DELETE FROM products WHERE id = $1", id); err != nil {
+	if _, err := h.db.Exec(
+		r.Context(), "DELETE FROM products WHERE id = $1", id,
+	); err != nil {
 		http.Error(w, "Error deleting product", http.StatusInternalServerError)
 		return
 	}

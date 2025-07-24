@@ -21,7 +21,6 @@ func NewRouter(dataBase *pgxpool.Pool) *mux.Router {
 
 	r.HandleFunc("/categories", categoryHandler.Create).Methods("POST")
 	r.HandleFunc("/categories/{id:[0-9a-fA-F-]+}", categoryHandler.GetByID).Methods("GET")
-
 	r.HandleFunc("/categories/{id:[0-9a-fA-F-]+}", categoryHandler.Update).Methods("PUT")
 	r.HandleFunc("/categories/{id:[0-9a-fA-F-]+}", categoryHandler.Delete).Methods("DELETE")
 	r.HandleFunc("/categories", categoryHandler.GetAll).Methods("GET")

@@ -25,13 +25,16 @@ func NewProductRepository(db *pgxpool.Pool) ProductRepository {
 
 func (r *productRepository) Create(ctx context.Context, product *models.Product) error {
 	query := "INSERT INTO products (name, category_id, price) VALUES ($1, $2, $3) RETURNING id"
-	return r.db.QueryRow(ctx, query, product.Name, product.CategoryID, product.Price).Scan(&product.ID)
+	return r.db.QueryRow(
+		ctx, query, product.Name, product.CategoryID, product.Price).Scan(&product.ID)
 }
 
 func (r *productRepository) GetByID(ctx context.Context, id int) (*models.Product, error) {
 	var product models.Product
 	query := "SELECT id, name, category_id, price FROM products WHERE id = $1"
-	err := r.db.QueryRow(ctx, query, id).Scan(&product.ID, &product.Name, &product.CategoryID, &product.Price)
+
+	err := r.db.QueryRow(ctx, query, id).Scan(
+		&product.ID, &product.Name, &product.CategoryID, &product.Price)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +43,8 @@ func (r *productRepository) GetByID(ctx context.Context, id int) (*models.Produc
 
 func (r *productRepository) Update(ctx context.Context, product *models.Product) error {
 	query := "UPDATE products SET name = $1, category_id = $2, price = $3 WHERE id = $4"
-	_, err := r.db.Exec(ctx, query, product.Name, product.CategoryID, product.Price, product.ID)
+	_, err := r.db.Exec(
+		ctx, query, product.Name, product.CategoryID, product.Price, product.ID)
 	return err
 }
 
@@ -54,6 +58,7 @@ func (r *productRepository) GetAll(ctx context.Context) ([]models.Product, error
 	var products []models.Product
 	query := "SELECT id, name, category_id, price FROM products"
 	rows, err := r.db.Query(ctx, query)
+
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +66,8 @@ func (r *productRepository) GetAll(ctx context.Context) ([]models.Product, error
 
 	for rows.Next() {
 		var product models.Product
-		if err := rows.Scan(&product.ID, &product.Name, &product.CategoryID, &product.Price); err != nil {
+		if err := rows.Scan(
+			&product.ID, &product.Name, &product.CategoryID, &product.Price); err != nil {
 			return nil, err
 		}
 		products = append(products, product)
