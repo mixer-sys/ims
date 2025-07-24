@@ -20,6 +20,8 @@ func Run(ctx context.Context, cfg *config.Config) error {
 			"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 			cfg.DbHost, cfg.DbPort, cfg.DbUser,
 			cfg.DbPassword, cfg.DbName, cfg.SSLMode))
+	defer dataBase.Close()
+
 	if err != nil {
 		return fmt.Errorf("failed to connect to the database: %w", err)
 	}
