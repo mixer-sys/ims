@@ -14,13 +14,12 @@ import (
 )
 
 func Run(ctx context.Context, cfg *config.Config) error {
-	// Создание пула соединений с базой данных
+
 	dataBase, err := pgxpool.Connect(ctx, fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", cfg.DbHost, cfg.DbPort, cfg.DbUser, cfg.DbPassword, cfg.DbName, cfg.SSLMode))
 	if err != nil {
 		return fmt.Errorf("failed to connect to the database: %w", err)
 	}
 
-	// Закрытие пула соединений при завершении контекста
 	go func() {
 		<-ctx.Done()
 		dataBase.Close()
@@ -35,7 +34,6 @@ func Run(ctx context.Context, cfg *config.Config) error {
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
-	// Запуск HTTP сервера
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			slog.Error("server listen error: ",
@@ -45,10 +43,8 @@ func Run(ctx context.Context, cfg *config.Config) error {
 		}
 	}()
 
-	// Ожидание завершения контекста
 	<-ctx.Done()
 
-	// Завершение работы сервера
 	if err := srv.Shutdown(context.Background()); err != nil {
 		slog.Error("server shutdown error: ",
 			slog.String("error", err.Error()),

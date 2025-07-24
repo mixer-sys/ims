@@ -4,6 +4,7 @@ go 1.23.10
 
 require (
 	github.com/caarlos0/env/v11 v11.3.1 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.3 // indirect

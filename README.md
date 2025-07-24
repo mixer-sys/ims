@@ -18,4 +18,7 @@ export GOOSE_DBSTRING=postgresql://user:password@127.0.0.1:5432/db?sslmode=disab
 goose -dir migrations up
 export PGPASSWORD="password"
 psql -h 127.0.0.1 -p 5432 -U user -d db -c "select * from products;"
+
+curl -X GET "http://localhost:8080/categories?limit=2&offset=1"
+
 ```
