@@ -20,7 +20,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger := logger.GetLogger(cfg)
+	logger := logger.New(cfg)
 
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt)

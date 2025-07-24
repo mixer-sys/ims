@@ -14,9 +14,10 @@ var LogLevel = map[string]slog.Level{
 	"ERROR": slog.LevelError,
 }
 
-func GetLogger(cfg *config.Config) *slog.Logger {
+func New(cfg *config.Config) *slog.Logger {
 	opts := &slog.HandlerOptions{
-		Level: LogLevel[cfg.LogLevel],
+		Level:     LogLevel[cfg.LogLevel],
+		AddSource: true,
 	}
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, opts))
 	return logger
