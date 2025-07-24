@@ -1,24 +1,16 @@
 package routers
 
 import (
-	"database/sql"
-	"ims/internal/domain/ports/repository"
-	"ims/internal/domain/ports/service"
 	"ims/internal/interfaces/http/handlers"
 
 	"github.com/gorilla/mux"
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-func NewRouter(dataBase *sql.DB) *mux.Router {
-	productRepo := repository.NewProductRepository(dataBase)
-	categoryRepo := repository.NewCategoryRepository(dataBase)
+func NewRouter(dataBase *pgxpool.Pool) *mux.Router {
 
-	productService := service.NewProductService(productRepo)
-	categoryService := service.NewCategoryService(categoryRepo)
-
-	productHandler := handlers.NewProductHandler(productService)
-	categoryHandler := handlers.NewCategoryHandler(categoryService)
+	productHandler := handlers.NewProductHandler(dataBase)   // Изменено
+	categoryHandler := handlers.NewCategoryHandler(dataBase) // Изменено
 
 	r := mux.NewRouter()
 	r.HandleFunc("/products", productHandler.Create).Methods("POST")

@@ -1,57 +1,59 @@
 package repository
 
 import (
-	"database/sql"
+	"context"
 	"ims/internal/domain/models"
+
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type ProductRepository interface {
-	Create(product *models.Product) error
-	GetByID(id int) (*models.Product, error)
-	Update(product *models.Product) error
-	Delete(id int) error
-	GetAll() ([]models.Product, error)
+	Create(ctx context.Context, product *models.Product) error
+	GetByID(ctx context.Context, id int) (*models.Product, error)
+	Update(ctx context.Context, product *models.Product) error
+	Delete(ctx context.Context, id int) error
+	GetAll(ctx context.Context) ([]models.Product, error)
 }
 
 type productRepository struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 
-func NewProductRepository(db *sql.DB) ProductRepository {
+func NewProductRepository(db *pgxpool.Pool) ProductRepository {
 	return &productRepository{db: db}
 }
 
-func (r *productRepository) Create(product *models.Product) error {
+func (r *productRepository) Create(ctx context.Context, product *models.Product) error {
 	query := "INSERT INTO products (name, category_id, price) VALUES ($1, $2, $3) RETURNING id"
-	return r.db.QueryRow(query, product.Name, product.CategoryID, product.Price).Scan(&product.ID)
+	return r.db.QueryRow(ctx, query, product.Name, product.CategoryID, product.Price).Scan(&product.ID)
 }
 
-func (r *productRepository) GetByID(id int) (*models.Product, error) {
+func (r *productRepository) GetByID(ctx context.Context, id int) (*models.Product, error) {
 	var product models.Product
 	query := "SELECT id, name, category_id, price FROM products WHERE id = $1"
-	err := r.db.QueryRow(query, id).Scan(&product.ID, &product.Name, &product.CategoryID, &product.Price)
+	err := r.db.QueryRow(ctx, query, id).Scan(&product.ID, &product.Name, &product.CategoryID, &product.Price)
 	if err != nil {
 		return nil, err
 	}
 	return &product, nil
 }
 
-func (r *productRepository) Update(product *models.Product) error {
+func (r *productRepository) Update(ctx context.Context, product *models.Product) error {
 	query := "UPDATE products SET name = $1, category_id = $2, price = $3 WHERE id = $4"
-	_, err := r.db.Exec(query, product.Name, product.CategoryID, product.Price, product.ID)
+	_, err := r.db.Exec(ctx, query, product.Name, product.CategoryID, product.Price, product.ID)
 	return err
 }
 
-func (r *productRepository) Delete(id int) error {
+func (r *productRepository) Delete(ctx context.Context, id int) error {
 	query := "DELETE FROM products WHERE id = $1"
-	_, err := r.db.Exec(query, id)
+	_, err := r.db.Exec(ctx, query, id)
 	return err
 }
 
-func (r *productRepository) GetAll() ([]models.Product, error) {
+func (r *productRepository) GetAll(ctx context.Context) ([]models.Product, error) {
 	var products []models.Product
 	query := "SELECT id, name, category_id, price FROM products"
-	rows, err := r.db.Query(query)
+	rows, err := r.db.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}

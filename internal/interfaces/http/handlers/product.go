@@ -3,19 +3,19 @@ package handlers
 import (
 	"encoding/json"
 	"ims/internal/domain/models"
-	"ims/internal/domain/ports/service"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type ProductHandler struct {
-	service service.ProductService
+	db *pgxpool.Pool
 }
 
-func NewProductHandler(service service.ProductService) *ProductHandler {
-	return &ProductHandler{service: service}
+func NewProductHandler(db *pgxpool.Pool) *ProductHandler {
+	return &ProductHandler{db: db}
 }
 
 func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -25,12 +25,13 @@ func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := h.service.Create(&product); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	_, err := h.db.Exec(r.Context(), "INSERT INTO products (name, price) VALUES ($1, $2)", product.Name, product.Price)
+	if err != nil {
+		http.Error(w, "Error", http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
-	err := json.NewEncoder(w).Encode(product)
+	err = json.NewEncoder(w).Encode(product)
 	if err != nil {
 		http.Error(w, "Error", http.StatusInternalServerError)
 		return
@@ -45,7 +46,8 @@ func (h *ProductHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
 	}
-	product, err := h.service.GetByID(id)
+	product := &models.Product{}
+	err = h.db.QueryRow(r.Context(), "SELECT id, name, price FROM products WHERE id = $1", id).Scan(&product.ID, &product.Name, &product.Price)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -70,9 +72,11 @@ func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
 	product.ID = id
 
-	if err := h.service.Update(&product); err != nil {
+	_, err = h.db.Exec(r.Context(), "UPDATE products SET name = $1, price = $2 WHERE id = $3", product.Name, product.Price, product.ID)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -87,7 +91,8 @@ func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
 	}
-	if err := h.service.Delete(id); err != nil {
+	_, err = h.db.Exec(r.Context(), "DELETE FROM products WHERE id = $1", id)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -95,10 +100,21 @@ func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	products, err := h.service.GetAll()
+	rows, err := h.db.Query(r.Context(), "SELECT id, name, price FROM products")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+	defer rows.Close()
+
+	var products []models.Product
+	for rows.Next() {
+		var product models.Product
+		if err := rows.Scan(&product.ID, &product.Name, &product.Price); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		products = append(products, product)
 	}
 	err = json.NewEncoder(w).Encode(products)
 	if err != nil {

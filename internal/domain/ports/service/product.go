@@ -1,16 +1,17 @@
 package service
 
 import (
+	"context"
 	"ims/internal/domain/models"
 	"ims/internal/domain/ports/repository"
 )
 
 type ProductService interface {
-	Create(product *models.Product) error
-	GetByID(id int) (*models.Product, error)
-	Update(product *models.Product) error
-	Delete(id int) error
-	GetAll() ([]models.Product, error)
+	Create(ctx context.Context, product *models.Product) error
+	GetByID(ctx context.Context, id int) (*models.Product, error)
+	Update(ctx context.Context, product *models.Product) error
+	Delete(ctx context.Context, id int) error
+	GetAll(ctx context.Context) ([]models.Product, error)
 }
 
 type productService struct {
@@ -21,22 +22,22 @@ func NewProductService(repo repository.ProductRepository) ProductService {
 	return &productService{repo: repo}
 }
 
-func (s *productService) Create(product *models.Product) error {
-	return s.repo.Create(product)
+func (s *productService) Create(ctx context.Context, product *models.Product) error {
+	return s.repo.Create(ctx, product)
 }
 
-func (s *productService) GetByID(id int) (*models.Product, error) {
-	return s.repo.GetByID(id)
+func (s *productService) GetByID(ctx context.Context, id int) (*models.Product, error) {
+	return s.repo.GetByID(ctx, id)
 }
 
-func (s *productService) Update(product *models.Product) error {
-	return s.repo.Update(product)
+func (s *productService) Update(ctx context.Context, product *models.Product) error {
+	return s.repo.Update(ctx, product)
 }
 
-func (s *productService) Delete(id int) error {
-	return s.repo.Delete(id)
+func (s *productService) Delete(ctx context.Context, id int) error {
+	return s.repo.Delete(ctx, id)
 }
 
-func (s *productService) GetAll() ([]models.Product, error) {
-	return s.repo.GetAll()
+func (s *productService) GetAll(ctx context.Context) ([]models.Product, error) {
+	return s.repo.GetAll(ctx)
 }
