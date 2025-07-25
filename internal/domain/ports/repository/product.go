@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"ims/internal/domain/models"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -28,7 +29,7 @@ func (r *productRepository) GetByID(ctx context.Context, id int) (*models.Produc
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&product.ID, &product.Name, &product.CategoryID, &product.Price)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("product not found: %w", err)
 	}
 	return &product, nil
 }
@@ -37,13 +38,13 @@ func (r *productRepository) Update(ctx context.Context, product *models.Product)
 	query := "UPDATE products SET name = $1, category_id = $2, price = $3 WHERE id = $4"
 	_, err := r.db.Exec(
 		ctx, query, product.Name, product.CategoryID, product.Price, product.ID)
-	return err
+	return fmt.Errorf("failed to update product: %w", err)
 }
 
 func (r *productRepository) Delete(ctx context.Context, id int) error {
 	query := "DELETE FROM products WHERE id = $1"
 	_, err := r.db.Exec(ctx, query, id)
-	return err
+	return fmt.Errorf("failed to delete product: %w", err)
 }
 
 func (r *productRepository) GetAll(ctx context.Context) ([]models.Product, error) {
@@ -52,7 +53,7 @@ func (r *productRepository) GetAll(ctx context.Context) ([]models.Product, error
 	rows, err := r.db.Query(ctx, query)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get products: %w", err)
 	}
 	defer rows.Close()
 
@@ -60,7 +61,7 @@ func (r *productRepository) GetAll(ctx context.Context) ([]models.Product, error
 		var product models.Product
 		if err := rows.Scan(
 			&product.ID, &product.Name, &product.CategoryID, &product.Price); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to scan product: %w", err)
 		}
 		products = append(products, product)
 	}

@@ -2,18 +2,11 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"ims/internal/domain/models"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 )
-
-type CategoryRepository interface {
-	Create(ctx context.Context, category *models.Category) error
-	GetByID(ctx context.Context, id int) (*models.Category, error)
-	Update(ctx context.Context, category *models.Category) error
-	Delete(ctx context.Context, id int) error
-	GetAll(ctx context.Context) ([]models.Category, error)
-}
 
 type categoryRepository struct {
 	db *pgxpool.Pool
@@ -36,7 +29,7 @@ func (r *categoryRepository) GetByID(ctx context.Context, id int) (*models.Categ
 
 	err := r.db.QueryRow(ctx, query, id).Scan(&category.ID, &category.Name)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("category not found: %w", err)
 	}
 	return &category, nil
 }
@@ -44,13 +37,13 @@ func (r *categoryRepository) GetByID(ctx context.Context, id int) (*models.Categ
 func (r *categoryRepository) Update(ctx context.Context, category *models.Category) error {
 	query := "UPDATE categories SET name = $1 WHERE id = $2"
 	_, err := r.db.Exec(ctx, query, category.Name, category.ID)
-	return err
+	return fmt.Errorf("failed to update category: %w", err)
 }
 
 func (r *categoryRepository) Delete(ctx context.Context, id int) error {
 	query := "DELETE FROM categories WHERE id = $1"
 	_, err := r.db.Exec(ctx, query, id)
-	return err
+	return fmt.Errorf("failed to delete category: %w", err)
 }
 
 func (r *categoryRepository) GetAll(ctx context.Context) ([]models.Category, error) {
@@ -59,14 +52,14 @@ func (r *categoryRepository) GetAll(ctx context.Context) ([]models.Category, err
 	rows, err := r.db.Query(ctx, query)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get categories: %w", err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		var category models.Category
 		if err := rows.Scan(&category.ID, &category.Name); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to scan category: %w", err)
 		}
 		categories = append(categories, category)
 	}

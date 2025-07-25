@@ -25,11 +25,6 @@ func Run(ctx context.Context, cfg *config.Config) error {
 	}
 	defer dataBase.Close()
 
-	go func() {
-		<-ctx.Done()
-		dataBase.Close()
-	}()
-
 	r := router.NewRouter(dataBase)
 
 	address := ":" + cfg.ServerPort
@@ -49,14 +44,24 @@ func Run(ctx context.Context, cfg *config.Config) error {
 		}
 	}()
 
+	Close(ctx, dataBase, srv)
+
+	return nil
+}
+
+func Close(ctx context.Context, dataBase *pgxpool.Pool, srv *http.Server) error {
+	go func() {
+		<-ctx.Done()
+		dataBase.Close()
+	}()
+
 	<-ctx.Done()
 
 	if err := srv.Shutdown(context.Background()); err != nil {
 		slog.Error("server shutdown error: ",
 			slog.String("error", err.Error()),
-			slog.String("address", address))
+		)
 		return fmt.Errorf("server shutdown error: %w", err)
 	}
-
 	return nil
 }
