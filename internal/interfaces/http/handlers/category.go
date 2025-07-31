@@ -1,9 +1,9 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"ims/internal/domain/models"
-	"ims/internal/domain/ports/repository"
 	"net/http"
 	"strconv"
 
@@ -11,11 +11,19 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type CategoryHandler struct {
-	db repository.CategoryRepository
+type CategoryRepository interface {
+	Create(ctx context.Context, category *models.Category) error
+	GetByID(ctx context.Context, id string) (*models.Category, error)
+	Update(ctx context.Context, category *models.Category) error
+	Delete(ctx context.Context, id string) error
+	GetAll(ctx context.Context, limit, offset int) ([]models.Category, error)
 }
 
-func NewCategoryHandler(db repository.CategoryRepository) *CategoryHandler {
+type CategoryHandler struct {
+	db CategoryRepository
+}
+
+func NewCategoryHandler(db CategoryRepository) *CategoryHandler {
 	return &CategoryHandler{db: db}
 }
 
@@ -24,19 +32,24 @@ func (h *CategoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&category); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+
 		return
 	}
 
 	category.ID = uuid.New().String()
 	err := h.db.Create(r.Context(), &category)
+
 	if err != nil {
 		http.Error(w, "Error inserting category", http.StatusInternalServerError)
+
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
+
 	if err := json.NewEncoder(w).Encode(category); err != nil {
 		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+
 		return
 	}
 }
@@ -48,11 +61,13 @@ func (h *CategoryHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	category, err := h.db.GetByID(r.Context(), id)
 	if err != nil {
 		http.Error(w, "Category not found", http.StatusNotFound)
+
 		return
 	}
 
 	if err := json.NewEncoder(w).Encode(category); err != nil {
 		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+
 		return
 	}
 }
@@ -64,27 +79,34 @@ func (h *CategoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 	var category models.Category
 	if err := json.NewDecoder(r.Body).Decode(&category); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+
 		return
 	}
 
 	category.ID = id
 	err := h.db.Update(r.Context(), &category)
+
 	if err != nil {
 		http.Error(w, "Error updating category", http.StatusInternalServerError)
+
 		return
 	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *CategoryHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+
 	id := vars["id"]
 
 	err := h.db.Delete(r.Context(), id)
 	if err != nil {
 		http.Error(w, "Error deleting category", http.StatusInternalServerError)
+
 		return
 	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -110,11 +132,13 @@ func (h *CategoryHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	categories, err := h.db.GetAll(r.Context(), limit, offset)
 	if err != nil {
 		http.Error(w, "Error fetching categories", http.StatusInternalServerError)
+
 		return
 	}
 
 	if err := json.NewEncoder(w).Encode(categories); err != nil {
 		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+
 		return
 	}
 }

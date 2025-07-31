@@ -24,8 +24,8 @@ func main() {
 
 	logger := logger.New(cfg)
 
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, os.Interrupt)
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, os.Interrupt)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -33,11 +33,14 @@ func main() {
 	dataBase, err := pgxpool.Connect(
 		ctx, fmt.Sprintf(
 			"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-			cfg.DbHost, cfg.DbPort, cfg.DbUser,
-			cfg.DbPassword, cfg.DbName, cfg.SSLMode))
+			cfg.DBHost, cfg.DBPort, cfg.DBUser,
+			cfg.DBPassword, cfg.DBName, cfg.SSLMode))
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		logger.Error("Failed to connect to database", err)
+
+		return
 	}
+
 	defer dataBase.Close()
 
 	var srv *http.Server
@@ -49,7 +52,7 @@ func main() {
 		}
 	}()
 
-	<-ch
+	<-shutdown
 
 	logger.Info("Shutting down server")
 
@@ -58,7 +61,9 @@ func main() {
 	err = server.Close(ctx, dataBase, srv)
 	if err != nil {
 		logger.Error("Failed to close server", err)
+
 		return
 	}
+
 	logger.Info("Server shutdown complete")
 }

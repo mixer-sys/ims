@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"ims/internal/domain/models"
+	"ims/internal/interfaces/http/handlers"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -12,7 +13,7 @@ type SQLCategoryRepository struct {
 	db *pgxpool.Pool
 }
 
-func NewCategoryRepository(db *pgxpool.Pool) CategoryRepository {
+func NewCategoryRepository(db *pgxpool.Pool) handlers.CategoryRepository {
 	return &SQLCategoryRepository{db: db}
 }
 
@@ -31,29 +32,35 @@ func (r *SQLCategoryRepository) GetByID(ctx context.Context, id string) (*models
 	if err != nil {
 		return nil, fmt.Errorf("category not found: %w", err)
 	}
+
 	return &category, nil
 }
 
 func (r *SQLCategoryRepository) Update(ctx context.Context, category *models.Category) error {
 	query := "UPDATE categories SET name = $1 WHERE id = $2"
 	_, err := r.db.Exec(ctx, query, category.Name, category.ID)
+
 	return fmt.Errorf("failed to update category: %w", err)
 }
 
 func (r *SQLCategoryRepository) Delete(ctx context.Context, id string) error {
 	query := "DELETE FROM categories WHERE id = $1"
 	_, err := r.db.Exec(ctx, query, id)
+
 	return fmt.Errorf("failed to delete category: %w", err)
 }
 
 func (r *SQLCategoryRepository) GetAll(ctx context.Context, limit, offset int) ([]models.Category, error) {
 	var categories []models.Category
+
 	query := "SELECT id, name FROM categories LIMIT $1 OFFSET $2"
+
 	rows, err := r.db.Query(ctx, query, limit, offset)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get categories: %w", err)
 	}
+
 	defer rows.Close()
 
 	for rows.Next() {
@@ -61,6 +68,7 @@ func (r *SQLCategoryRepository) GetAll(ctx context.Context, limit, offset int) (
 		if err := rows.Scan(&category.ID, &category.Name); err != nil {
 			return nil, fmt.Errorf("failed to scan category: %w", err)
 		}
+
 		categories = append(categories, category)
 	}
 
