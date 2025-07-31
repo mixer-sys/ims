@@ -13,17 +13,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-func Run(ctx context.Context, cfg *config.Config) error {
-
-	dataBase, err := pgxpool.Connect(
-		ctx, fmt.Sprintf(
-			"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-			cfg.DbHost, cfg.DbPort, cfg.DbUser,
-			cfg.DbPassword, cfg.DbName, cfg.SSLMode))
-	if err != nil {
-		return fmt.Errorf("failed to connect to the database: %w", err)
-	}
-	defer dataBase.Close()
+func Run(ctx context.Context, dataBase *pgxpool.Pool, cfg *config.Config) (*http.Server, error) {
 
 	r := router.NewRouter(dataBase)
 
@@ -44,18 +34,12 @@ func Run(ctx context.Context, cfg *config.Config) error {
 		}
 	}()
 
-	Close(ctx, dataBase, srv)
-
-	return nil
+	return srv, nil
 }
 
 func Close(ctx context.Context, dataBase *pgxpool.Pool, srv *http.Server) error {
-	go func() {
-		<-ctx.Done()
-		dataBase.Close()
-	}()
 
-	<-ctx.Done()
+	dataBase.Close()
 
 	if err := srv.Shutdown(context.Background()); err != nil {
 		slog.Error("server shutdown error: ",

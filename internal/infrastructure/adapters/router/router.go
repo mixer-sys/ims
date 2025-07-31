@@ -1,6 +1,7 @@
 package routers
 
 import (
+	"ims/internal/domain/ports/repository"
 	"ims/internal/interfaces/http/handlers"
 
 	"github.com/gorilla/mux"
@@ -8,8 +9,11 @@ import (
 )
 
 func NewRouter(dataBase *pgxpool.Pool) *mux.Router {
-	productHandler := handlers.NewProductHandler(dataBase)
-	categoryHandler := handlers.NewCategoryHandler(dataBase)
+	productRepository := repository.NewProductRepository(dataBase)
+	categoryRepository := repository.NewCategoryRepository(dataBase)
+
+	productHandler := handlers.NewProductHandler(productRepository)
+	categoryHandler := handlers.NewCategoryHandler(categoryRepository)
 
 	r := mux.NewRouter()
 

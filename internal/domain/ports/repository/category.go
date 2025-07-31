@@ -8,21 +8,21 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-type categoryRepository struct {
+type SQLCategoryRepository struct {
 	db *pgxpool.Pool
 }
 
 func NewCategoryRepository(db *pgxpool.Pool) CategoryRepository {
-	return &categoryRepository{db: db}
+	return &SQLCategoryRepository{db: db}
 }
 
-func (r *categoryRepository) Create(ctx context.Context, category *models.Category) error {
+func (r *SQLCategoryRepository) Create(ctx context.Context, category *models.Category) error {
 	query := "INSERT INTO categories (name) VALUES ($1) RETURNING id"
 
 	return r.db.QueryRow(ctx, query, category.Name).Scan(&category.ID)
 }
 
-func (r *categoryRepository) GetByID(ctx context.Context, id int) (*models.Category, error) {
+func (r *SQLCategoryRepository) GetByID(ctx context.Context, id string) (*models.Category, error) {
 	var category models.Category
 
 	query := "SELECT id, name FROM categories WHERE id = $1"
@@ -34,22 +34,22 @@ func (r *categoryRepository) GetByID(ctx context.Context, id int) (*models.Categ
 	return &category, nil
 }
 
-func (r *categoryRepository) Update(ctx context.Context, category *models.Category) error {
+func (r *SQLCategoryRepository) Update(ctx context.Context, category *models.Category) error {
 	query := "UPDATE categories SET name = $1 WHERE id = $2"
 	_, err := r.db.Exec(ctx, query, category.Name, category.ID)
 	return fmt.Errorf("failed to update category: %w", err)
 }
 
-func (r *categoryRepository) Delete(ctx context.Context, id int) error {
+func (r *SQLCategoryRepository) Delete(ctx context.Context, id string) error {
 	query := "DELETE FROM categories WHERE id = $1"
 	_, err := r.db.Exec(ctx, query, id)
 	return fmt.Errorf("failed to delete category: %w", err)
 }
 
-func (r *categoryRepository) GetAll(ctx context.Context) ([]models.Category, error) {
+func (r *SQLCategoryRepository) GetAll(ctx context.Context, limit, offset int) ([]models.Category, error) {
 	var categories []models.Category
-	query := "SELECT id, name FROM categories"
-	rows, err := r.db.Query(ctx, query)
+	query := "SELECT id, name FROM categories LIMIT $1 OFFSET $2"
+	rows, err := r.db.Query(ctx, query, limit, offset)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get categories: %w", err)
@@ -63,5 +63,10 @@ func (r *categoryRepository) GetAll(ctx context.Context) ([]models.Category, err
 		}
 		categories = append(categories, category)
 	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error occurred during rows iteration: %w", err)
+	}
+
 	return categories, nil
 }

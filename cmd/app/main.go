@@ -4,20 +4,22 @@ import (
 	"context"
 	"fmt"
 	config "ims/config"
-	"ims/internal/infrastructure/adapters/logger"
+	"ims/internal/infrastructure/logger"
 	"ims/internal/interfaces/http/server"
+	"log"
+	"net/http"
 
 	"os"
 	"os/signal"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	_ "github.com/lib/pq"
 )
 
 func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		fmt.Printf("Failed to load configuration: %v", err)
-		os.Exit(1)
+		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
 	logger := logger.New(cfg)
@@ -28,19 +30,22 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	dataBase, err := pgxpool.Connect(
+		ctx, fmt.Sprintf(
+			"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+			cfg.DbHost, cfg.DbPort, cfg.DbUser,
+			cfg.DbPassword, cfg.DbName, cfg.SSLMode))
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer dataBase.Close()
+
+	var srv *http.Server
+
 	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				logger.Info("Context cancelled, shutting down server")
-				return
-			default:
-				err := server.Run(ctx, cfg)
-				if err != nil {
-					logger.Error("Failed to run server", err)
-					return
-				}
-			}
+		srv, err = server.Run(ctx, dataBase, cfg)
+		if err != nil {
+			log.Fatalf("Failed to start server: %v", err)
 		}
 	}()
 
@@ -50,5 +55,10 @@ func main() {
 
 	cancel()
 
+	err = server.Close(ctx, dataBase, srv)
+	if err != nil {
+		logger.Error("Failed to close server", err)
+		return
+	}
 	logger.Info("Server shutdown complete")
 }

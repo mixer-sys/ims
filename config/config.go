@@ -19,18 +19,19 @@ type Config struct {
 	GooseDriver string `env:"GOOSE_DRIVER" envDefault:"postgres"`
 }
 
-func LoadConfig() (*Config, error) {
-	var cfg Config
+func LoadConfig() (cfg *Config, err error) {
 
-	err := godotenv.Load()
+	err = godotenv.Load()
 
 	if err != nil {
 		return nil, fmt.Errorf("error loading .env file: %w", err)
 	}
 
-	if err := env.Parse(&cfg); err != nil {
+	cfg = &Config{}
+
+	if err := env.Parse(cfg); err != nil {
 		return nil, fmt.Errorf("error parsing environment variables: %w", err)
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }

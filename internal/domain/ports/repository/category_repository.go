@@ -7,8 +7,8 @@ import (
 
 type CategoryRepository interface {
 	Create(ctx context.Context, category *models.Category) error
-	GetByID(ctx context.Context, id int) (*models.Category, error)
+	GetByID(ctx context.Context, id string) (*models.Category, error)
 	Update(ctx context.Context, category *models.Category) error
-	Delete(ctx context.Context, id int) error
-	GetAll(ctx context.Context) ([]models.Category, error)
+	Delete(ctx context.Context, id string) error
+	GetAll(ctx context.Context, limit, offset int) ([]models.Category, error)
 }

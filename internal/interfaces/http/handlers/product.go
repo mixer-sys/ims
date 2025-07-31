@@ -3,17 +3,19 @@ package handlers
 import (
 	"encoding/json"
 	"ims/internal/domain/models"
+	"ims/internal/domain/ports/repository"
+	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type ProductHandler struct {
-	db *pgxpool.Pool
+	db repository.ProductRepository
 }
 
-func NewProductHandler(db *pgxpool.Pool) *ProductHandler {
+func NewProductHandler(db repository.ProductRepository) *ProductHandler {
 	return &ProductHandler{db: db}
 }
 
@@ -25,7 +27,7 @@ func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.db.Exec(r.Context(), "INSERT INTO products (name, price) VALUES ($1, $2)", product.Name, product.Price); err != nil {
+	if err := h.db.Create(r.Context(), &product); err != nil {
 		http.Error(w, "Error inserting product", http.StatusInternalServerError)
 		return
 	}
@@ -37,16 +39,18 @@ func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ProductHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-	id := mux.Vars(r)["id"]
-	product := &models.Product{}
+	vars := mux.Vars(r)
+	id := vars["id"]
 
-	if err := h.db.QueryRow(r.Context(), "SELECT id, name, price FROM products WHERE id = $1", id).Scan(&product.ID, &product.Name, &product.Price); err != nil {
-		http.Error(w, "Product not found", http.StatusNotFound)
+	product, err := h.db.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, "product not found", http.StatusNotFound)
 		return
 	}
 
 	if err := json.NewEncoder(w).Encode(product); err != nil {
 		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -60,10 +64,7 @@ func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	product.ID = id
-	if _, err := h.db.Exec(
-		r.Context(), "UPDATE products SET name = $1, price = $2 WHERE id = $3",
-		product.Name, product.Price, product.ID); err != nil {
-
+	if err := h.db.Update(r.Context(), &product); err != nil {
 		http.Error(w, "Error updating product", http.StatusInternalServerError)
 		return
 	}
@@ -73,9 +74,8 @@ func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
-	if _, err := h.db.Exec(
-		r.Context(), "DELETE FROM products WHERE id = $1", id,
-	); err != nil {
+
+	if err := h.db.Delete(r.Context(), id); err != nil {
 		http.Error(w, "Error deleting product", http.StatusInternalServerError)
 		return
 	}
@@ -84,24 +84,34 @@ func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	rows, err := h.db.Query(r.Context(), "SELECT id, name, price FROM products")
+	limitStr := r.URL.Query().Get("limit")
+	offsetStr := r.URL.Query().Get("offset")
+
+	limit := 10
+	offset := 0
+
+	if limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil {
+			limit = l
+		}
+	}
+
+	if offsetStr != "" {
+		if o, err := strconv.Atoi(offsetStr); err == nil {
+			offset = o
+		}
+	}
+
+	products, err := h.db.GetAll(r.Context(), limit, offset)
 	if err != nil {
+		slog.Error("Error fetching products",
+			slog.String("error", err.Error()))
 		http.Error(w, "Error fetching products", http.StatusInternalServerError)
 		return
-	}
-	defer rows.Close()
-
-	var products []models.Product
-	for rows.Next() {
-		var product models.Product
-		if err := rows.Scan(&product.ID, &product.Name, &product.Price); err != nil {
-			http.Error(w, "Error scanning product", http.StatusInternalServerError)
-			return
-		}
-		products = append(products, product)
 	}
 
 	if err := json.NewEncoder(w).Encode(products); err != nil {
 		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		return
 	}
 }

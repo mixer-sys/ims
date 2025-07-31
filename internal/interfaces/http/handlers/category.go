@@ -3,19 +3,19 @@ package handlers
 import (
 	"encoding/json"
 	"ims/internal/domain/models"
+	"ims/internal/domain/ports/repository"
 	"net/http"
 	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type CategoryHandler struct {
-	db *pgxpool.Pool
+	db repository.CategoryRepository
 }
 
-func NewCategoryHandler(db *pgxpool.Pool) *CategoryHandler {
+func NewCategoryHandler(db repository.CategoryRepository) *CategoryHandler {
 	return &CategoryHandler{db: db}
 }
 
@@ -28,16 +28,14 @@ func (h *CategoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	category.ID = uuid.New().String()
-	_, err := h.db.Exec(
-		r.Context(), "INSERT INTO categories (id, name) VALUES ($1, $2)", category.ID, category.Name)
+	err := h.db.Create(r.Context(), &category)
 	if err != nil {
 		http.Error(w, "Error inserting category", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(category)
-	if err != nil {
+	if err := json.NewEncoder(w).Encode(category); err != nil {
 		http.Error(w, "Error encoding response", http.StatusInternalServerError)
 		return
 	}
@@ -45,18 +43,15 @@ func (h *CategoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 func (h *CategoryHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-
 	id := vars["id"]
-	category := &models.Category{}
-	err := h.db.QueryRow(
-		r.Context(), "SELECT id, name FROM categories WHERE id = $1", id,
-	).Scan(&category.ID, &category.Name)
+
+	category, err := h.db.GetByID(r.Context(), id)
 	if err != nil {
 		http.Error(w, "Category not found", http.StatusNotFound)
 		return
 	}
-	err = json.NewEncoder(w).Encode(category)
-	if err != nil {
+
+	if err := json.NewEncoder(w).Encode(category); err != nil {
 		http.Error(w, "Error encoding response", http.StatusInternalServerError)
 		return
 	}
@@ -73,8 +68,7 @@ func (h *CategoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	category.ID = id
-
-	_, err := h.db.Exec(r.Context(), "UPDATE categories SET name = $1 WHERE id = $2", category.Name, category.ID)
+	err := h.db.Update(r.Context(), &category)
 	if err != nil {
 		http.Error(w, "Error updating category", http.StatusInternalServerError)
 		return
@@ -84,9 +78,9 @@ func (h *CategoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *CategoryHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-
 	id := vars["id"]
-	_, err := h.db.Exec(r.Context(), "DELETE FROM categories WHERE id = $1", id)
+
+	err := h.db.Delete(r.Context(), id)
 	if err != nil {
 		http.Error(w, "Error deleting category", http.StatusInternalServerError)
 		return
@@ -113,25 +107,13 @@ func (h *CategoryHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	rows, err := h.db.Query(r.Context(), "SELECT id, name FROM categories LIMIT $1 OFFSET $2", limit, offset)
+	categories, err := h.db.GetAll(r.Context(), limit, offset)
 	if err != nil {
 		http.Error(w, "Error fetching categories", http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
 
-	var categories []models.Category
-	for rows.Next() {
-		var category models.Category
-		if err := rows.Scan(&category.ID, &category.Name); err != nil {
-			http.Error(w, "Error scanning category", http.StatusInternalServerError)
-			return
-		}
-		categories = append(categories, category)
-	}
-
-	err = json.NewEncoder(w).Encode(categories)
-	if err != nil {
+	if err := json.NewEncoder(w).Encode(categories); err != nil {
 		http.Error(w, "Error encoding response", http.StatusInternalServerError)
 		return
 	}

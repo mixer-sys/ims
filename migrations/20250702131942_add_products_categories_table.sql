@@ -2,17 +2,17 @@
 -- +goose StatementBegin
 SELECT 'up SQL query';
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; -- 
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE categories (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE products (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
-    category_id UUID REFERENCES categories(id), -- Ссылка на UUID
+    category_id UUID REFERENCES categories(id),
     price DECIMAL(10, 2) NOT NULL
 );
 

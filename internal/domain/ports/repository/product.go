@@ -8,21 +8,21 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-type productRepository struct {
+type SQLProductRepository struct {
 	db *pgxpool.Pool
 }
 
 func NewProductRepository(db *pgxpool.Pool) ProductRepository {
-	return &productRepository{db: db}
+	return &SQLProductRepository{db: db}
 }
 
-func (r *productRepository) Create(ctx context.Context, product *models.Product) error {
+func (r *SQLProductRepository) Create(ctx context.Context, product *models.Product) error {
 	query := "INSERT INTO products (name, category_id, price) VALUES ($1, $2, $3) RETURNING id"
 	return r.db.QueryRow(
 		ctx, query, product.Name, product.CategoryID, product.Price).Scan(&product.ID)
 }
 
-func (r *productRepository) GetByID(ctx context.Context, id int) (*models.Product, error) {
+func (r *SQLProductRepository) GetByID(ctx context.Context, id string) (*models.Product, error) {
 	var product models.Product
 	query := "SELECT id, name, category_id, price FROM products WHERE id = $1"
 
@@ -34,23 +34,23 @@ func (r *productRepository) GetByID(ctx context.Context, id int) (*models.Produc
 	return &product, nil
 }
 
-func (r *productRepository) Update(ctx context.Context, product *models.Product) error {
+func (r *SQLProductRepository) Update(ctx context.Context, product *models.Product) error {
 	query := "UPDATE products SET name = $1, category_id = $2, price = $3 WHERE id = $4"
 	_, err := r.db.Exec(
 		ctx, query, product.Name, product.CategoryID, product.Price, product.ID)
 	return fmt.Errorf("failed to update product: %w", err)
 }
 
-func (r *productRepository) Delete(ctx context.Context, id int) error {
+func (r *SQLProductRepository) Delete(ctx context.Context, id string) error {
 	query := "DELETE FROM products WHERE id = $1"
 	_, err := r.db.Exec(ctx, query, id)
 	return fmt.Errorf("failed to delete product: %w", err)
 }
 
-func (r *productRepository) GetAll(ctx context.Context) ([]models.Product, error) {
+func (r *SQLProductRepository) GetAll(ctx context.Context, limit, offset int) ([]models.Product, error) {
 	var products []models.Product
-	query := "SELECT id, name, category_id, price FROM products"
-	rows, err := r.db.Query(ctx, query)
+	query := "SELECT id, name, category_id, price FROM products LIMIT $1 OFFSET $2"
+	rows, err := r.db.Query(ctx, query, limit, offset)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get products: %w", err)
@@ -65,5 +65,10 @@ func (r *productRepository) GetAll(ctx context.Context) ([]models.Product, error
 		}
 		products = append(products, product)
 	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error occurred during rows iteration: %w", err)
+	}
+
 	return products, nil
 }

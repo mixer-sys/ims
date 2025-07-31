@@ -20,5 +20,7 @@ export PGPASSWORD="password"
 psql -h 127.0.0.1 -p 5432 -U user -d db -c "select * from products;"
 
 curl -X GET "http://localhost:8080/categories?limit=2&offset=1"
+docker exec -it ims_db_1 psql -U user -d db
+
 
 ```
