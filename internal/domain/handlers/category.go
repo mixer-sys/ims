@@ -29,7 +29,7 @@ func NewCategoryHandler(db CategoryRepository) *CategoryHandler {
 
 func (h *CategoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var category models.Category
-
+	
 	if err := json.NewDecoder(r.Body).Decode(&category); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 

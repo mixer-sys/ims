@@ -14,6 +14,19 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
+func LoggerMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("request",
+			slog.String("method", r.Method),
+			slog.String("path", r.URL.Path),
+			slog.String("remote_addr", r.RemoteAddr),
+			slog.String("user_agent", r.UserAgent()),
+		)
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func Run(ctx context.Context,
 	dataBase *pgxpool.Pool, cfg *config.Config) (
 	*http.Server, error) {
@@ -23,7 +36,7 @@ func Run(ctx context.Context,
 
 	srv := &http.Server{
 		Addr:              address,
-		Handler:           r,
+		Handler:           LoggerMiddleware(r),
 		ReadHeaderTimeout: time.Duration(cfg.ReadHeaderTimeoutSecond) * time.Second,
 	}
 

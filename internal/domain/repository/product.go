@@ -18,6 +18,10 @@ func NewProductRepository(db *pgxpool.Pool) handlers.ProductRepository {
 }
 
 func (r *SQLProductRepository) Create(ctx context.Context, product *models.Product) error {
+	if err := models.ValidateProduct(product); err != nil {
+		return fmt.Errorf("validation error: %w", err)
+	}
+
 	query := "INSERT INTO products (name, category_id, price) VALUES ($1, $2, $3) RETURNING id"
 
 	return r.db.QueryRow(
@@ -39,6 +43,10 @@ func (r *SQLProductRepository) GetByID(ctx context.Context, id string) (*models.
 }
 
 func (r *SQLProductRepository) Update(ctx context.Context, product *models.Product) error {
+	if err := models.ValidateProduct(product); err != nil {
+		return fmt.Errorf("validation error: %w", err)
+	}
+
 	query := "UPDATE products SET name = $1, category_id = $2, price = $3 WHERE id = $4"
 	_, err := r.db.Exec(
 		ctx, query, product.Name, product.CategoryID, product.Price, product.ID)

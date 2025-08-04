@@ -18,6 +18,9 @@ func NewCategoryRepository(db *pgxpool.Pool) handlers.CategoryRepository {
 }
 
 func (r *SQLCategoryRepository) Create(ctx context.Context, category *models.Category) error {
+	if err := models.ValidateCategory(category); err != nil {
+		return fmt.Errorf("validation error: %w", err)
+	}
 	query := "INSERT INTO categories (name) VALUES ($1) RETURNING id"
 
 	return r.db.QueryRow(ctx, query, category.Name).Scan(&category.ID)
