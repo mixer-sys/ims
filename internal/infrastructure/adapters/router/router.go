@@ -1,8 +1,8 @@
 package routers
 
 import (
-	"ims/internal/domain/ports/repository"
-	"ims/internal/interfaces/http/handlers"
+	"ims/internal/domain/handlers"
+	"ims/internal/domain/repository"
 
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v4/pgxpool"

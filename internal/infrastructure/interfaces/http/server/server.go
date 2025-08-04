@@ -41,9 +41,7 @@ func Run(ctx context.Context,
 }
 
 func Close(ctx context.Context,
-	dataBase *pgxpool.Pool,
 	srv *http.Server) error {
-	dataBase.Close()
 
 	if err := srv.Shutdown(ctx); err != nil {
 		slog.Error("server shutdown error: ",
@@ -54,4 +52,25 @@ func Close(ctx context.Context,
 	}
 
 	return nil
+}
+
+type Database struct {
+	Pool *pgxpool.Pool
+}
+
+func NewDatabase(ctx context.Context, cfg *config.Config) (*Database, error) {
+
+	pool, err := pgxpool.Connect(ctx, fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		cfg.DBHost, cfg.DBPort, cfg.DBUser,
+		cfg.DBPassword, cfg.DBName, cfg.SSLMode))
+	if err != nil {
+		return nil, err
+	}
+
+	return &Database{Pool: pool}, nil
+}
+
+func (db *Database) Close() {
+	db.Pool.Close()
 }

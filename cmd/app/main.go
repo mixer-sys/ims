@@ -2,17 +2,15 @@ package main
 
 import (
 	"context"
-	"fmt"
-	config "ims/config"
+	"ims/config"
+	"ims/internal/infrastructure/interfaces/http/server"
 	"ims/internal/infrastructure/logger"
-	"ims/internal/interfaces/http/server"
 	"log"
 	"net/http"
 
 	"os"
 	"os/signal"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	_ "github.com/lib/pq"
 )
 
@@ -30,23 +28,18 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	dataBase, err := pgxpool.Connect(
-		ctx, fmt.Sprintf(
-			"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-			cfg.DBHost, cfg.DBPort, cfg.DBUser,
-			cfg.DBPassword, cfg.DBName, cfg.SSLMode))
+	dataBase, err := server.NewDatabase(ctx, cfg)
 	if err != nil {
 		logger.Error("Failed to connect to database", err)
 
 		return
 	}
-
 	defer dataBase.Close()
 
 	var srv *http.Server
 
 	go func() {
-		srv, err = server.Run(ctx, dataBase, cfg)
+		srv, err = server.Run(ctx, dataBase.Pool, cfg)
 		if err != nil {
 			log.Fatalf("Failed to start server: %v", err)
 		}
@@ -58,12 +51,14 @@ func main() {
 
 	cancel()
 
-	err = server.Close(ctx, dataBase, srv)
+	err = server.Close(ctx, srv)
 	if err != nil {
 		logger.Error("Failed to close server", err)
 
 		return
 	}
+
+	dataBase.Close()
 
 	logger.Info("Server shutdown complete")
 }

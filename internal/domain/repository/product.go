@@ -3,8 +3,8 @@ package repository
 import (
 	"context"
 	"fmt"
+	"ims/internal/domain/handlers"
 	"ims/internal/domain/models"
-	"ims/internal/interfaces/http/handlers"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -47,7 +47,7 @@ func (r *SQLProductRepository) Update(ctx context.Context, product *models.Produ
 		return fmt.Errorf("failed to update product: %w", err)
 	}
 
-	return fmt.Errorf("failed to update product: %w", err)
+	return nil
 }
 
 func (r *SQLProductRepository) Delete(ctx context.Context, id string) error {
@@ -58,7 +58,7 @@ func (r *SQLProductRepository) Delete(ctx context.Context, id string) error {
 		return fmt.Errorf("failed to delete product: %w", err)
 	}
 
-	return fmt.Errorf("failed to delete product: %w", err)
+	return nil
 }
 
 func (r *SQLProductRepository) GetAll(ctx context.Context, limit, offset int) ([]models.Product, error) {
