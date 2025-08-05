@@ -40,6 +40,10 @@ func (r *SQLCategoryRepository) GetByID(ctx context.Context, id string) (*models
 }
 
 func (r *SQLCategoryRepository) Update(ctx context.Context, category *models.Category) error {
+	if err := models.ValidateCategory(category); err != nil {
+		return fmt.Errorf("validation error: %w", err)
+	}
+	
 	query := "UPDATE categories SET name = $1 WHERE id = $2"
 	_, err := r.db.Exec(ctx, query, category.Name, category.ID)
 	if err != nil {
