@@ -5,38 +5,24 @@ import (
 	"errors"
 	"fmt"
 	"ims/config"
+	"ims/internal/domain/repository"
+	router "ims/internal/infrastructure/adapters/router"
+	"ims/internal/infrastructure/interfaces/http/middleware"
 	"log/slog"
 	"net/http"
 	"time"
-
-	router "ims/internal/infrastructure/adapters/router"
-
-	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-func LoggerMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		slog.Info("request",
-			slog.String("method", r.Method),
-			slog.String("path", r.URL.Path),
-			slog.String("remote_addr", r.RemoteAddr),
-			slog.String("user_agent", r.UserAgent()),
-		)
-
-		next.ServeHTTP(w, r)
-	})
-}
-
 func Run(ctx context.Context,
-	dataBase *pgxpool.Pool, cfg *config.Config) (
+	dataBase repository.Database, cfg *config.Config) (
 	*http.Server, error) {
 	r := router.NewRouter(dataBase)
 
-	address := ":" + cfg.ServerPort
+	address := ":" + cfg.Server.Port
 
 	srv := &http.Server{
 		Addr:              address,
-		Handler:           LoggerMiddleware(r),
+		Handler:           middleware.LoggerMiddleware(r),
 		ReadHeaderTimeout: time.Duration(cfg.ReadHeaderTimeoutSecond) * time.Second,
 	}
 
@@ -65,25 +51,4 @@ func Close(ctx context.Context,
 	}
 
 	return nil
-}
-
-type Database struct {
-	Pool *pgxpool.Pool
-}
-
-func NewDatabase(ctx context.Context, cfg *config.Config) (*Database, error) {
-
-	pool, err := pgxpool.Connect(ctx, fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		cfg.DBHost, cfg.DBPort, cfg.DBUser,
-		cfg.DBPassword, cfg.DBName, cfg.SSLMode))
-	if err != nil {
-		return nil, err
-	}
-
-	return &Database{Pool: pool}, nil
-}
-
-func (db *Database) Close() {
-	db.Pool.Close()
 }

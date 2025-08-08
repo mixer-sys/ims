@@ -3,7 +3,10 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"ims/internal/domain/errors"
 	"ims/internal/domain/models"
+
 	"net/http"
 	"strconv"
 
@@ -29,29 +32,30 @@ func NewCategoryHandler(db CategoryRepository) *CategoryHandler {
 
 func (h *CategoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var category models.Category
-	
-	if err := json.NewDecoder(r.Body).Decode(&category); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 
+	if err := json.NewDecoder(r.Body).Decode(&category); err != nil {
+		apiErr := errors.NewAPIError("Invalid request payload", http.StatusBadRequest)
+		errors.WriteErrorResponse(w, apiErr)
+		return
+	}
+
+	err := models.ValidateCategory(&category)
+	if err != nil {
+		apiErr := errors.NewAPIError(fmt.Sprintf("Invalid category: %s", err), http.StatusBadRequest)
+		errors.WriteErrorResponse(w, apiErr)
 		return
 	}
 
 	category.ID = uuid.New().String()
-	err := h.db.Create(r.Context(), &category)
+	err = h.db.Create(r.Context(), &category)
 
 	if err != nil {
-		http.Error(w, "Error inserting category", http.StatusInternalServerError)
-
+		apiErr := errors.NewAPIError("Error inserting category", http.StatusInternalServerError)
+		errors.WriteErrorResponse(w, apiErr)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-
-	if err := json.NewEncoder(w).Encode(category); err != nil {
-		http.Error(w, "Error encoding response", http.StatusInternalServerError)
-
-		return
-	}
 }
 
 func (h *CategoryHandler) GetByID(w http.ResponseWriter, r *http.Request) {
@@ -60,14 +64,14 @@ func (h *CategoryHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	category, err := h.db.GetByID(r.Context(), id)
 	if err != nil {
-		http.Error(w, "Category not found", http.StatusNotFound)
-
+		apiErr := errors.NewAPIError("Category not found", http.StatusNotFound)
+		errors.WriteErrorResponse(w, apiErr)
 		return
 	}
 
 	if err := json.NewEncoder(w).Encode(category); err != nil {
-		http.Error(w, "Error encoding response", http.StatusInternalServerError)
-
+		apiErr := errors.NewAPIError("Error encoding response", http.StatusInternalServerError)
+		errors.WriteErrorResponse(w, apiErr)
 		return
 	}
 }
@@ -78,8 +82,8 @@ func (h *CategoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	var category models.Category
 	if err := json.NewDecoder(r.Body).Decode(&category); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
-
+		apiErr := errors.NewAPIError("Invalid request payload", http.StatusBadRequest)
+		errors.WriteErrorResponse(w, apiErr)
 		return
 	}
 
@@ -87,8 +91,8 @@ func (h *CategoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 	err := h.db.Update(r.Context(), &category)
 
 	if err != nil {
-		http.Error(w, "Error updating category", http.StatusInternalServerError)
-
+		apiErr := errors.NewAPIError("Error updating category", http.StatusInternalServerError)
+		errors.WriteErrorResponse(w, apiErr)
 		return
 	}
 
@@ -97,13 +101,12 @@ func (h *CategoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *CategoryHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-
 	id := vars["id"]
 
 	err := h.db.Delete(r.Context(), id)
 	if err != nil {
-		http.Error(w, "Error deleting category", http.StatusInternalServerError)
-
+		apiErr := errors.NewAPIError("Error deleting category", http.StatusInternalServerError)
+		errors.WriteErrorResponse(w, apiErr)
 		return
 	}
 
@@ -131,14 +134,14 @@ func (h *CategoryHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	categories, err := h.db.GetAll(r.Context(), limit, offset)
 	if err != nil {
-		http.Error(w, "Error fetching categories", http.StatusInternalServerError)
-
+		apiErr := errors.NewAPIError("Error fetching categories", http.StatusInternalServerError)
+		errors.WriteErrorResponse(w, apiErr)
 		return
 	}
 
 	if err := json.NewEncoder(w).Encode(categories); err != nil {
-		http.Error(w, "Error encoding response", http.StatusInternalServerError)
-
+		apiErr := errors.NewAPIError("Error encoding response", http.StatusInternalServerError)
+		errors.WriteErrorResponse(w, apiErr)
 		return
 	}
 }

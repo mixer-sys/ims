@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"ims/config"
+	"ims/internal/domain/repository"
 	"ims/internal/infrastructure/interfaces/http/server"
 	"ims/internal/infrastructure/logger"
 	"log"
+	"log/slog"
 	"net/http"
 
 	"os"
@@ -28,10 +30,9 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	dataBase, err := server.NewDatabase(ctx, cfg)
+	dataBase, err := repository.NewDatabase(ctx, cfg)
 	if err != nil {
-		logger.Error("Failed to connect to database", err)
-
+		logger.Error("Failed to connect to database", slog.String("error", err.Error()))
 		return
 	}
 	defer dataBase.Close()
@@ -39,9 +40,9 @@ func main() {
 	var srv *http.Server
 
 	go func() {
-		srv, err = server.Run(ctx, dataBase.Pool, cfg)
+		srv, err = server.Run(ctx, *dataBase, cfg)
 		if err != nil {
-			log.Fatalf("Failed to start server: %v", err)
+			log.Fatalf("Failed to start server: %s", err.Error())
 		}
 	}()
 
@@ -57,8 +58,6 @@ func main() {
 
 		return
 	}
-
-	dataBase.Close()
 
 	logger.Info("Server shutdown complete")
 }

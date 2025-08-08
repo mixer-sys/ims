@@ -3,8 +3,9 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"ims/internal/domain/errors"
 	"ims/internal/domain/models"
-	"log/slog"
+
 	"net/http"
 	"strconv"
 
@@ -23,8 +24,7 @@ type ProductHandler struct {
 	db ProductRepository
 }
 
-func NewProductHandler(
-	db ProductRepository) *ProductHandler {
+func NewProductHandler(db ProductRepository) *ProductHandler {
 	return &ProductHandler{db: db}
 }
 
@@ -32,22 +32,25 @@ func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var product models.Product
 
 	if err := json.NewDecoder(r.Body).Decode(&product); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		apiErr := errors.NewAPIError("Invalid request payload", http.StatusBadRequest)
+		errors.WriteErrorResponse(w, apiErr)
+		return
+	}
 
+	err := models.ValidateProduct(&product)
+	if err != nil {
+		apiErr := errors.NewAPIError("Invalid product data", http.StatusBadRequest)
+		errors.WriteErrorResponse(w, apiErr)
 		return
 	}
 
 	if err := h.db.Create(r.Context(), &product); err != nil {
-		http.Error(w, "Error inserting product", http.StatusInternalServerError)
-
+		apiErr := errors.NewAPIError("Error inserting product", http.StatusInternalServerError)
+		errors.WriteErrorResponse(w, apiErr)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-
-	if err := json.NewEncoder(w).Encode(product); err != nil {
-		http.Error(w, "Error encoding response", http.StatusInternalServerError)
-	}
 }
 
 func (h *ProductHandler) GetByID(w http.ResponseWriter, r *http.Request) {
@@ -56,14 +59,14 @@ func (h *ProductHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	product, err := h.db.GetByID(r.Context(), id)
 	if err != nil {
-		http.Error(w, "product not found", http.StatusNotFound)
-
+		apiErr := errors.NewAPIError("Product not found", http.StatusNotFound)
+		errors.WriteErrorResponse(w, apiErr)
 		return
 	}
 
 	if err := json.NewEncoder(w).Encode(product); err != nil {
-		http.Error(w, "Error encoding response", http.StatusInternalServerError)
-
+		apiErr := errors.NewAPIError("Error encoding response", http.StatusInternalServerError)
+		errors.WriteErrorResponse(w, apiErr)
 		return
 	}
 }
@@ -72,17 +75,16 @@ func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 
 	var product models.Product
-
 	if err := json.NewDecoder(r.Body).Decode(&product); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
-
+		apiErr := errors.NewAPIError("Invalid request payload", http.StatusBadRequest)
+		errors.WriteErrorResponse(w, apiErr)
 		return
 	}
 
 	product.ID = id
 	if err := h.db.Update(r.Context(), &product); err != nil {
-		http.Error(w, "Error updating product", http.StatusInternalServerError)
-
+		apiErr := errors.NewAPIError("Error updating product", http.StatusInternalServerError)
+		errors.WriteErrorResponse(w, apiErr)
 		return
 	}
 
@@ -93,8 +95,8 @@ func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 
 	if err := h.db.Delete(r.Context(), id); err != nil {
-		http.Error(w, "Error deleting product", http.StatusInternalServerError)
-
+		apiErr := errors.NewAPIError("Error deleting product", http.StatusInternalServerError)
+		errors.WriteErrorResponse(w, apiErr)
 		return
 	}
 
@@ -122,16 +124,14 @@ func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	products, err := h.db.GetAll(r.Context(), limit, offset)
 	if err != nil {
-		slog.Error("Error fetching products",
-			slog.String("error", err.Error()))
-		http.Error(w, "Error fetching products", http.StatusInternalServerError)
-
+		apiErr := errors.NewAPIError("Error fetching products", http.StatusInternalServerError)
+		errors.WriteErrorResponse(w, apiErr)
 		return
 	}
 
 	if err := json.NewEncoder(w).Encode(products); err != nil {
-		http.Error(w, "Error encoding response", http.StatusInternalServerError)
-
+		apiErr := errors.NewAPIError("Error encoding response", http.StatusInternalServerError)
+		errors.WriteErrorResponse(w, apiErr)
 		return
 	}
 }
