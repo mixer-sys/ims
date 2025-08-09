@@ -14,7 +14,7 @@ func New(cfg *config.Config) *slog.Logger {
 		"WARN":  slog.LevelWarn,
 		"ERROR": slog.LevelError,
 	}
-	if cfg.Server.LogLevel != "DEBUG" || cfg.Server.LogLevel != "INFO" || cfg.Server.LogLevel != "WARN" || cfg.Server.LogLevel != "ERROR" {
+	if (cfg.Server.LogLevel == "") || cfg.Server.LogLevel != "DEBUG" && cfg.Server.LogLevel != "INFO" && cfg.Server.LogLevel != "WARN" && cfg.Server.LogLevel != "ERROR" {
 		cfg.Server.LogLevel = "INFO"
 	}
 
