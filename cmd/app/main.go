@@ -17,7 +17,7 @@ import (
 )
 
 func main() {
-	cfg, err := config.LoadConfig()
+	cfg, err := config.MustLoad()
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %s", err)
 	}
