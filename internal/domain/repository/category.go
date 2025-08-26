@@ -6,6 +6,7 @@ import (
 	"ims/internal/domain/handlers"
 	"ims/internal/domain/models"
 
+	"github.com/jackc/pgx"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
@@ -32,8 +33,11 @@ func (r *SQLCategoryRepository) GetByID(ctx context.Context, id string) (*models
 	query := "SELECT id, name FROM categories WHERE id = $1"
 
 	err := r.db.QueryRow(ctx, query, id).Scan(&category.ID, &category.Name)
-	if err != nil {
+	if err == pgx.ErrNoRows {
 		return nil, fmt.Errorf("category not found: %w", err)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get category: %w", err)
 	}
 
 	return &category, nil
@@ -43,7 +47,7 @@ func (r *SQLCategoryRepository) Update(ctx context.Context, category *models.Cat
 	if err := models.ValidateCategory(category); err != nil {
 		return fmt.Errorf("validation error: %w", err)
 	}
-	
+
 	query := "UPDATE categories SET name = $1 WHERE id = $2"
 	_, err := r.db.Exec(ctx, query, category.Name, category.ID)
 	if err != nil {
@@ -56,6 +60,11 @@ func (r *SQLCategoryRepository) Update(ctx context.Context, category *models.Cat
 func (r *SQLCategoryRepository) Delete(ctx context.Context, id string) error {
 	query := "DELETE FROM categories WHERE id = $1"
 	_, err := r.db.Exec(ctx, query, id)
+
+	if err == pgx.ErrNoRows {
+		return fmt.Errorf("category not found: %w", err)
+	}
+
 	if err != nil {
 		return fmt.Errorf("failed to delete category: %w", err)
 	}
@@ -64,7 +73,7 @@ func (r *SQLCategoryRepository) Delete(ctx context.Context, id string) error {
 }
 
 func (r *SQLCategoryRepository) GetAll(ctx context.Context, limit, offset int) ([]models.Category, error) {
-	var categories []models.Category
+	categories := make([]models.Category, 0)
 
 	query := "SELECT id, name FROM categories LIMIT $1 OFFSET $2"
 

@@ -8,7 +8,6 @@ import (
 	"ims/internal/domain/models"
 
 	"net/http"
-	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -114,23 +113,7 @@ func (h *CategoryHandler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CategoryHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	limitStr := r.URL.Query().Get("limit")
-	offsetStr := r.URL.Query().Get("offset")
-
-	limit := 10
-	offset := 0
-
-	if limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil {
-			limit = l
-		}
-	}
-
-	if offsetStr != "" {
-		if o, err := strconv.Atoi(offsetStr); err == nil {
-			offset = o
-		}
-	}
+	limit, offset := parsePaginationParams(r)
 
 	categories, err := h.db.GetAll(r.Context(), limit, offset)
 	if err != nil {

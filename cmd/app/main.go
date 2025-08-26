@@ -7,7 +7,6 @@ import (
 	"ims/internal/infrastructure/interfaces/http/server"
 	"ims/internal/infrastructure/logger"
 	"log"
-	"log/slog"
 	"net/http"
 
 	"os"
@@ -17,7 +16,7 @@ import (
 )
 
 func main() {
-	cfg, err := config.MustLoad()
+	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %s", err)
 	}
@@ -32,8 +31,7 @@ func main() {
 
 	dataBase, err := repository.NewDatabase(ctx, cfg)
 	if err != nil {
-		logger.Error("Failed to connect to database", slog.String("error", err.Error()))
-		return
+		log.Fatalf("Failed to connect to database: %s", err)
 	}
 	defer dataBase.Close()
 

@@ -6,6 +6,7 @@ import (
 	"ims/internal/domain/handlers"
 	"ims/internal/domain/models"
 
+	"github.com/jackc/pgx"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
@@ -35,8 +36,13 @@ func (r *SQLProductRepository) GetByID(ctx context.Context, id string) (*models.
 
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&product.ID, &product.Name, &product.CategoryID, &product.Price)
-	if err != nil {
+
+	if err == pgx.ErrNoRows {
 		return nil, fmt.Errorf("product not found: %w", err)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get product: %w", err)
 	}
 
 	return &product, nil
@@ -62,6 +68,10 @@ func (r *SQLProductRepository) Delete(ctx context.Context, id string) error {
 	query := "DELETE FROM products WHERE id = $1"
 	_, err := r.db.Exec(ctx, query, id)
 
+	if err == pgx.ErrNoRows {
+		return fmt.Errorf("product not found: %w", err)
+	}
+
 	if err != nil {
 		return fmt.Errorf("failed to delete product: %w", err)
 	}
@@ -70,7 +80,7 @@ func (r *SQLProductRepository) Delete(ctx context.Context, id string) error {
 }
 
 func (r *SQLProductRepository) GetAll(ctx context.Context, limit, offset int) ([]models.Product, error) {
-	var products []models.Product
+	products := make([]models.Product, 0)
 
 	query := "SELECT id, name, category_id, price FROM products LIMIT $1 OFFSET $2"
 

@@ -29,7 +29,7 @@ type Config struct {
 	ReadHeaderTimeoutSecond int          `env:"READ_HEADER_TIMEOUT_SECOND" envDefault:"5"`
 }
 
-func MustLoad() (*Config, error) {
+func Load() (*Config, error) {
 	err := godotenv.Load()
 	if err != nil {
 		return nil, fmt.Errorf("error loading .env file: %w", err)
