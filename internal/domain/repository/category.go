@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"ims/internal/domain/handlers"
 	"ims/internal/domain/models"
@@ -61,11 +62,10 @@ func (r *SQLCategoryRepository) Delete(ctx context.Context, id string) error {
 	query := "DELETE FROM categories WHERE id = $1"
 	_, err := r.db.Exec(ctx, query, id)
 
-	if err == pgx.ErrNoRows {
-		return fmt.Errorf("category not found: %w", err)
-	}
-
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Errorf("category not found: %w", err)
+		}
 		return fmt.Errorf("failed to delete category: %w", err)
 	}
 
