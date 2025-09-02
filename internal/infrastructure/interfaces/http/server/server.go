@@ -13,36 +13,42 @@ import (
 	"time"
 )
 
-func Run(ctx context.Context,
-	dataBase repository.Database, cfg *config.Config) (
-	*http.Server, error) {
-	r := router.NewRouter(dataBase)
+type Server struct {
+	httpServer *http.Server
+	address    string
+}
 
-	address := ":" + cfg.Server.Port
+func New(dataBase *repository.Database, cfg *config.Config) *Server {
+	s := &Server{}
+	r := router.NewRouter(*dataBase)
 
-	srv := &http.Server{
-		Addr:              address,
+	s.address = ":" + cfg.Server.Port
+	s.httpServer = &http.Server{
+		Addr:              s.address,
 		Handler:           middleware.LoggerMiddleware(r),
 		ReadHeaderTimeout: time.Duration(cfg.ReadHeaderTimeoutSecond) * time.Second,
 	}
+	return s
+}
+
+func (s *Server) Run(ctx context.Context) error {
 
 	go func() {
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := s.httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("server listen error: ",
 				slog.String("error", err.Error()),
-				slog.String("address", address))
+				slog.String("address", s.address))
 
 			return
 		}
 	}()
 
-	return srv, nil
+	return nil
 }
 
-func Close(ctx context.Context,
-	srv *http.Server) error {
+func (s *Server) Close(ctx context.Context) error {
 
-	if err := srv.Shutdown(ctx); err != nil {
+	if err := s.httpServer.Shutdown(ctx); err != nil {
 		slog.Error("server shutdown error: ",
 			slog.String("error", err.Error()),
 		)

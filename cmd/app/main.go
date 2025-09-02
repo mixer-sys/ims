@@ -7,7 +7,6 @@ import (
 	"ims/internal/infrastructure/interfaces/http/server"
 	"ims/internal/infrastructure/logger"
 	"log"
-	"net/http"
 
 	"os"
 	"os/signal"
@@ -35,10 +34,10 @@ func main() {
 	}
 	defer dataBase.Close()
 
-	var srv *http.Server
+	srv := server.New(dataBase, cfg)
 
 	go func() {
-		srv, err = server.Run(ctx, *dataBase, cfg)
+		err = srv.Run(ctx)
 		if err != nil {
 			log.Fatalf("Failed to start server: %s", err.Error())
 		}
@@ -50,7 +49,7 @@ func main() {
 
 	cancel()
 
-	err = server.Close(ctx, srv)
+	err = srv.Close(ctx)
 	if err != nil {
 		logger.Error("Failed to close server", err)
 
