@@ -3,20 +3,10 @@ package repository
 import (
 	"context"
 	"fmt"
-	"ims/internal/domain/handlers"
 	"ims/internal/domain/models"
 
 	"github.com/jackc/pgx"
-	"github.com/jackc/pgx/v4/pgxpool"
 )
-
-type SQLProductRepository struct {
-	db *pgxpool.Pool
-}
-
-func NewProductRepository(db *pgxpool.Pool) handlers.ProductRepository {
-	return &SQLProductRepository{db: db}
-}
 
 func (r *SQLProductRepository) Create(ctx context.Context, product *models.Product) error {
 	if err := models.ValidateProduct(product); err != nil {

@@ -4,20 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"ims/internal/domain/handlers"
 	"ims/internal/domain/models"
 
 	"github.com/jackc/pgx"
-	"github.com/jackc/pgx/v4/pgxpool"
 )
-
-type SQLCategoryRepository struct {
-	db *pgxpool.Pool
-}
-
-func NewCategoryRepository(db *pgxpool.Pool) handlers.CategoryRepository {
-	return &SQLCategoryRepository{db: db}
-}
 
 func (r *SQLCategoryRepository) Create(ctx context.Context, category *models.Category) error {
 	if err := models.ValidateCategory(category); err != nil {

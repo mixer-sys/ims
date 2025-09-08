@@ -8,8 +8,8 @@ import (
 )
 
 func NewRouter(dataBase repository.Database) *mux.Router {
-	productRepository := repository.NewProductRepository(dataBase.Pool)
-	categoryRepository := repository.NewCategoryRepository(dataBase.Pool)
+	productRepository := repository.NewProductRepository(&dataBase)
+	categoryRepository := repository.NewCategoryRepository(&dataBase)
 
 	productHandler := handlers.NewProductHandler(productRepository)
 	categoryHandler := handlers.NewCategoryHandler(categoryRepository)

@@ -4,8 +4,8 @@ import (
 	"context"
 	"ims/config"
 	"ims/internal/domain/repository"
-	"ims/internal/infrastructure/interfaces/http/server"
-	"ims/internal/infrastructure/logger"
+	"ims/internal/interfaces/http/server"
+	"ims/internal/logger"
 	"log"
 
 	"os"
